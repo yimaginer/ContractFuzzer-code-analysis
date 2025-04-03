@@ -1,40 +1,72 @@
+# 指定操作系统环境
 os: Visual Studio 2015
 
-# Clone directly into GOPATH.
+# 将代码克隆到 GOPATH 中的指定目录
 clone_folder: C:\gopath\src\github.com\ethereum\go-ethereum
+
+# 限制克隆深度为 5，减少克隆时间
 clone_depth: 5
+
+# 定义版本号格式
 version: "{branch}.{build}"
+
+# 定义全局和矩阵环境变量
 environment:
   global:
-    GOPATH: C:\gopath
-    CC: gcc.exe
+    GOPATH: C:\gopath # 设置 Go 的工作目录
+    CC: gcc.exe       # 指定 C 编译器为 gcc
   matrix:
+    # 定义 64 位环境变量
     - GETH_ARCH: amd64
       MSYS2_ARCH: x86_64
       MSYS2_BITS: 64
       MSYSTEM: MINGW64
       PATH: C:\msys64\mingw64\bin\;C:\Program Files (x86)\NSIS\;%PATH%
+    # 定义 32 位环境变量
     - GETH_ARCH: 386
       MSYS2_ARCH: i686
       MSYS2_BITS: 32
       MSYSTEM: MINGW32
       PATH: C:\msys64\mingw32\bin\;C:\Program Files (x86)\NSIS\;%PATH%
 
+# 安装步骤
 install:
-  - git submodule update --init
-  - rmdir C:\go /s /q
-  - appveyor DownloadFile https://storage.googleapis.com/golang/go1.8.3.windows-%GETH_ARCH%.zip
-  - 7z x go1.8.3.windows-%GETH_ARCH%.zip -y -oC:\ > NUL
-  - go version
-  - gcc --version
+  - git submodule update --init # 初始化并更新子模块
+  - rmdir C:\go /s /q           # 删除旧的 Go 安装目录
+  - appveyor DownloadFile https://storage.googleapis.com/golang/go1.8.3.windows-%GETH_ARCH%.zip # 下载指定架构的 Go 安装包
+  - 7z x go1.8.3.windows-%GETH_ARCH%.zip -y -oC:\ > NUL # 解压 Go 安装包到 C:\ 目录
+  - go version                 # 检查 Go 版本
+  - gcc --version              # 检查 gcc 版本
 
+# 构建步骤
 build_script:
-  - go run build\ci.go install
+  - go run build\ci.go install # 使用 ci.go 脚本安装项目
 
+# 构建完成后的操作
 after_build:
-  - go run build\ci.go archive -type zip -signer WINDOWS_SIGNING_KEY -upload gethstore/builds
-  - go run build\ci.go nsis -signer WINDOWS_SIGNING_KEY -upload gethstore/builds
+  - go run build\ci.go archive -type zip -signer WINDOWS_SIGNING_KEY -upload gethstore/builds # 打包为 zip 文件并上传到指定存储
+  - go run build\ci.go nsis -signer WINDOWS_SIGNING_KEY -upload gethstore/builds # 使用 NSIS 打包并上传到指定存储
 
+# 测试步骤
 test_script:
-  - set CGO_ENABLED=1
-  - go run build\ci.go test -coverage
+  - set CGO_ENABLED=1 # 启用 CGO（C 语言支持）
+  - go run build\ci.go test -coverage # 使用 ci.go 脚本运行测试并生成覆盖率报告
+
+
+#   AppVeyor 是一个 CI/CD 平台，主要用于：
+
+# 自动化构建:
+# 根据 appveyor.yml 文件中的指令，自动拉取代码、安装依赖并构建项目。
+# 自动化测试:
+# 运行测试脚本，生成测试报告和代码覆盖率。
+# 自动化部署:
+# 将构建产物（如安装包或二进制文件）上传到指定的存储或发布平台。
+
+
+# 构建脚本: appveyor.yml 是 AppVeyor 的配置文件，用于定义构建、测试和部署流程。
+# 对应的构建工具: AppVeyor 平台。
+# 辅助工具:
+# Go 工具链（go run）。
+# GCC（用于 C/C++ 编译）。
+# 7-Zip（解压工具）。
+# NSIS（用于创建安装包）

@@ -13,16 +13,18 @@ import {
     defaultAccount
 } from "../utils/Account.js";
 
-dotenv.config();
+dotenv.config(); // 加载环境变量配置
 
-const BIN_DIR = process.env.BIN_SUB_DIR;
-const BIN_SUFFIX = process.env.BIN_SUFFIX;
-const ABI_DIR = process.env.ABI_SUB_DIR;
-const ABI_SUFFIX = process.env.ABI_SUFFIX;
-const CONFIG_PATH = process.env.CONFIG_PATH;
+// 定义目录和文件后缀
+const BIN_DIR = process.env.BIN_SUB_DIR; // 合约二进制文件目录
+const BIN_SUFFIX = process.env.BIN_SUFFIX; // 合约二进制文件后缀
+const ABI_DIR = process.env.ABI_SUB_DIR; // 合约 ABI 文件目录
+const ABI_SUFFIX = process.env.ABI_SUFFIX; // 合约 ABI 文件后缀
+const CONFIG_PATH = process.env.CONFIG_PATH; // 合约配置文件路径
 
-const util = new ContractUtils();
+const util = new ContractUtils(); // 合约工具类实例
 
+// 文件操作相关函数
 const fread = fs.readFileSync;
 const fopen = fs.openSync;
 const fclose = fs.closeSync;
@@ -31,6 +33,8 @@ const listdir = fs.readdirSync;
 const print = console.log;
 const error = console.error;
 const BalanceOf = web3.eth.getBalance;
+
+// 从 JSON 文件中读取数据
 function deJSON(file) {
     let f = fopen(file, "r");
     let data = fread(f, {
@@ -40,6 +44,8 @@ function deJSON(file) {
     fclose(f);
     return js;
 }
+
+// 将 JSON 数据写入文件
 function writeJSONtoFile(file, jsData) {
     let f = fopen(file, "w");
     fwrite(f, jsData, {
@@ -48,6 +54,7 @@ function writeJSONtoFile(file, jsData) {
     fclose(f);
 }
 
+// 读取合约的二进制文件
 function deBin(workplace, name) {
     let file = workplace + "/" + BIN_DIR + "/" + name + BIN_SUFFIX;
     let f = fopen(file, "r");
@@ -55,10 +62,11 @@ function deBin(workplace, name) {
         encoding: "utf8"
     });
     fclose(f);
-    data = "0x" + data;
+    data = "0x" + data; // 添加前缀 "0x"
     return data;
 }
 
+// 读取合约的 ABI 文件
 function deAbi(workplace, name) {
     let file = workplace + "/" + ABI_DIR + "/" + name + ABI_SUFFIX;
     let f = fopen(file, "r");
@@ -70,6 +78,7 @@ function deAbi(workplace, name) {
     return data;
 }
 
+// 获取 JSON 对象的长度
 function getJsonObjLength(jsonObj) {
     var Length = 0;
     for (var item in jsonObj) {
@@ -77,26 +86,28 @@ function getJsonObjLength(jsonObj) {
     }
     return Length;
 }
+
+// 部署单个合约
 async function deployAcontract(workplace, contract) {
-    let name = contract.name;
-    let param_Values = contract.param_Values;
+    let name = contract.name; // 合约名称
+    let param_Values = contract.param_Values; // 合约参数值
     if (param_Values == "none") {
         param_Values = {};
     }
-    let from = contract.from;
-    let gas = contract.gas;
-    let value = contract.value;
-    let payable = contract.payable;
-    let values = contract.values;
-    let abi = deAbi(workplace, name);
-    let bin = deBin(workplace, name);
+    let from = contract.from; // 部署者地址
+    let gas = contract.gas; // Gas 限额
+    let value = contract.value; // 交易附带的以太币
+    let payable = contract.payable; // 是否为可支付合约
+    let values = contract.values; // 参数值数组
+    let abi = deAbi(workplace, name); // 获取 ABI
+    let bin = deBin(workplace, name); // 获取二进制代码
     contract = {
         name: name,
         abi: abi,
         bin: bin
     };
     let aParams;
-    // gas = 80000;
+    // 设置部署参数
     if (payable == true) {
         aParams = {
             from: from,
@@ -110,28 +121,31 @@ async function deployAcontract(workplace, contract) {
         };
     }
 
-    let len = getJsonObjLength(param_Values)
+    let len = getJsonObjLength(param_Values); // 检查参数长度
     if (len == 0) {
-        return  await util.DeployWithoutParams(contract, aParams);
+        // 无参数部署
+        return await util.DeployWithoutParams(contract, aParams);
     } else {
+        // 带参数部署
         let paramArr = values;
         return await util.DeployWithParams(contract, paramArr, aParams);
     }
 }
 
+// 部署多个合约
 async function deploy(js) {
-    let home = js.home;
-    let value = js.value;
-    let gas = js.gas;
-    let contracts = js.contracts;
-    let from = js.from;
+    let home = js.home; // 合约主目录
+    let value = js.value; // 默认交易附带的以太币
+    let gas = js.gas; // 默认 Gas 限额
+    let contracts = js.contracts; // 合约列表
+    let from = js.from; // 部署者地址
     if (from == undefined || from == "none") {
-        from = web3.eth.accounts[0];
+        from = web3.eth.accounts[0]; // 使用默认账户
     }
     for (let index in contracts) {
         let contract = contracts[index];
         if (contract.deployed != undefined && contract.deployed == 1)
-            continue;
+            continue; // 跳过已部署的合约
         let workplace;
         if (contract.home == undefined || contract.home == "none")
             contract.home = home;
@@ -147,65 +161,75 @@ async function deploy(js) {
             contract.from = from;
         }
         try {
-            // console.log(workplace,contract);
+            // 部署合约
             let instance = await deployAcontract(workplace, contract);
-            contract.deployed = 1;
-            // console.log(instance);
-            contract["address"] = instance.address;
+            contract.deployed = 1; // 标记为已部署
+            contract["address"] = instance.address; // 保存合约地址
         } catch (err) {
-            print("Error Profile");
-            print("contract:", contract.name);
+            print("部署错误");
+            print("合约名称:", contract.name);
             print(err.toString().split("\n")[0]);
-            contract.deployed = 0;
+            contract.deployed = 0; // 标记为部署失败
         }
     }
     console.log(js);
-    writeJSONtoFile(js.file_path,JSON.stringify(js));
+    writeJSONtoFile(js.file_path, JSON.stringify(js)); // 更新配置文件
     return JSON.stringify(js);
 }
 
+// 批量部署合约
 function deployBatch(js_arr) {
     for (let js of js_arr) {
         deploy(js);
     }
 }
+
+// 获取配置文件列表
 function getConfigs(dir) {
     let items = listdir(dir);
     let files = [];
     let index = 0;
-    for (let i=0;i<items.length;i++){
-        let item =  items[i];
+    for (let i = 0; i < items.length; i++) {
+        let item = items[i];
         files[index++] = dir + "/" + item;
     }
     return files;
 }
 
+// 部署流程:
+// 读取配置文件。
+// 解析配置文件中的合约信息。
+// 调用 deployAcontract 部署合约。
+// 将部署结果（如合约地址）写回配置文件。
+
+// 执行外部配置文件中的部署
 function executeOuterConfigs() {
-    let dir = CONFIG_PATH;
-    let configs = getConfigs(dir);
+    let dir = CONFIG_PATH; // 配置文件目录
+    let configs = getConfigs(dir); // 获取配置文件列表
     let js_arr = [];
-    const batchMaxSize = 20;
-    const batchInterval = 30 * 1000;
+    const batchMaxSize = 20; // 每批最大部署数量
+    const batchInterval = 30 * 1000; // 每批部署间隔时间（毫秒）
     let times = 0;
-    // configs = configs.slice(0, configs.length - 1);
-     for (let config of configs) {
-        let js = deJSON(config);
+    for (let config of configs) {
+        let js = deJSON(config); // 读取配置文件
         js.file_path = config;
         js_arr.push(js);
         if (js_arr.length > batchMaxSize) {
-            setTimeout(deployBatch, times * batchInterval, js_arr);
+            setTimeout(deployBatch, times * batchInterval, js_arr); // 延迟批量部署
             times++;
             js_arr = [];
         }
     }
     console.log(js_arr);
-    setTimeout(deployBatch, times * batchInterval, js_arr);
+    setTimeout(deployBatch, times * batchInterval, js_arr); // 部署剩余的合约
 }
 
+// 主函数
 function main() {
-    executeOuterConfigs()
+    executeOuterConfigs(); // 执行外部配置文件中的部署
 }
 
+// 判断是否为主模块
 let __name__ = "__main__";
 if (__name__ == "__main__") {
     main();

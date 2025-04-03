@@ -1,15 +1,15 @@
-# Deploy a contract on Ethereum Chain (Geth only)
+# 在以太坊链（仅支持 Geth）上部署合约
 
-## Quick Start
+## 快速开始
 
-A container with the dependencies set up can be found [here](https://pan.baidu.com/s/1HwG3DNvNb32SxbQ1pyMwYQ).(password:`hgvv`)
+一个包含所有依赖的容器可以在 [这里](https://pan.baidu.com/s/1HwG3DNvNb32SxbQ1pyMwYQ) 找到。（密码：`hgvv`）
 
-Step 1. Load the image & Start the container:
+### 第一步：加载镜像并启动容器
 ```
 docker load<contract_deployer.tar && docker run -i -t contractfuzzer/deployer
 ```
 
-Step 2. Deploy the example contracts `contract_deployer/contracts/` inside the container:
+### 第二步：在容器中部署示例合约 `contract_deployer/contracts/`：
 
 ```
   contract_deployer/contracts
@@ -17,17 +17,17 @@ Step 2. Deploy the example contracts `contract_deployer/contracts/` inside the c
                       verified_contract_abis
                       verified_contract_bins
 ```
-The process below will try to deploy `Aeternis` to private chain.　
+以下过程将尝试将 `Aeternis` 部署到私有链。
 
-Run:
+运行：
 ```
 cd /ContractFuzzer && ./deployer_run.sh
 ```
-Step 3. Check whether Aeternis is deployed.
-`/ContractFuzzer/contract_deployer/contracts/config/Aeternis.json` 
 
-Before deployment.
+### 第三步：检查 `Aeternis` 是否已部署。
+查看文件 `/ContractFuzzer/contract_deployer/contracts/config/Aeternis.json`。
 
+#### 部署前的配置：
 ```
 "contracts": [
         {
@@ -53,7 +53,8 @@ Before deployment.
         }
 ```
 
-After deployment. If success, `address` will be added and set to `Aeternis`'s private chain address.
+#### 部署成功后：
+如果部署成功，`address` 字段将被添加，并设置为 `Aeternis` 的私有链地址。
 ```
 "contracts": [
         {
@@ -75,47 +76,50 @@ After deployment. If success, `address` will be added and set to `Aeternis`'s pr
                 "0xed161fa9adad3ba4d30c829034c4745ef443e0d9"
             ],
             "payable": false,
-            "value": "1000000000"
-            `address`:"0xbcf6fb693173f2a6c7c837a31717c403b496ccae"
+            "value": "1000000000",
+            "address": "0xbcf6fb693173f2a6c7c837a31717c403b496ccae"
         }
 ```
 
-## Deploy Ethereum Contracts
+---
 
-### Prerequisites
+## 部署以太坊合约
 
-1. The contract's abi definition file provided.
-2. The contract's bin file provided
-3. The contract's configuration file provided.
+### 前置条件
 
+1. 提供合约的 ABI 定义文件。
+2. 提供合约的 BIN 文件。
+3. 提供合约的配置文件。
 
-You can learn the formats from the existing contracts within docker. 
+你可以从 Docker 中的现有合约学习这些文件的格式：
 ```
   contract_deployer/contracts
                         config
                         verified_contract_abis
                         verified_contract_bins
 ```
-The config directory contains a configuration file for contract deployment. You can copy and modify based on the arguments of the contracts you want to deploy.
-The verified_contract_abis contains the abi file downloaded from Etherscan.
-The verified_contract_bins contains the bin file downloaded from Etherscan by directly saving the Contract Creation Code into a bin file.
+- `config` 目录包含合约部署的配置文件。你可以根据需要部署的合约参数复制并修改这些文件。
+- `verified_contract_abis` 目录包含从 Etherscan 下载的 ABI 文件。
+- `verified_contract_bins` 目录包含从 Etherscan 下载的 BIN 文件（直接保存合约创建代码到 BIN 文件中）。
 
-Run 
+运行以下命令：
 ```
 docker run -it -v YourEthereumPrivateChainPath:/ContractFuzzer/Ethereum -v your_contracts_to_deploy:/ContractFuzzer/contract_deployer/contracts  -e "ContractFuzzer=/contractFuzzer/contract_deployer"  ContractFuzzer/deployer:latest
 ```
-Then Run
+
+然后运行：
 ```
 cd /ContractFuzzer && ./deployer_run.sh
 ```
-Finally, you could find contract `address` in file 
-`/ContractFuzzer/contract_deployer/contracts/config/xxx.json`!
 
+最后，你可以在文件 `/ContractFuzzer/contract_deployer/contracts/config/xxx.json` 中找到合约的 `address`！
 
-# Notice
+---
 
-Note that the deployment of the contract can be within the docker or on your local machine,as long as you have prepared the config, bin, and abi files. Within your local machine, after starting the geth client, you can run the ./deployer_run.sh shell script to deploy your smart contract. 
+## 注意事项
 
-The instruction is under change. And this needs efforts to make a success.
+请注意，合约的部署可以在 Docker 容器中完成，也可以在本地机器上完成，只要你准备好了配置文件、BIN 文件和 ABI 文件。在本地机器上，启动 Geth 客户端后，你可以运行 `./deployer_run.sh` 脚本来部署智能合约。
 
-What's more, if you could deploy contracts on the private chain(upon base chain `Ethereum`  we provided in the repository) in your own way, that's very nice.
+本说明正在更新中，部署成功可能需要一些额外的努力。
+
+此外，如果你能够通过自己的方式在私有链（基于我们提供的 `Ethereum` 基础链）上部署合约，那就更好了。
