@@ -1,0 +1,5 @@
+go 1.24.2
+
+use ./contract_fuzzer
+use ./Ethereum
+use ./go-ethereum-cf
